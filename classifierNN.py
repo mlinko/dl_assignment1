@@ -16,7 +16,7 @@ class classifierNN:
 			print(i)
 			distances = np.sum( np.abs(self.X - x[i,:]), axis=1 )
 			y[i] = self.Y[np.argmin(distances)]
-		print(y)
+		return y
 			
 
 
@@ -26,5 +26,7 @@ if __name__ == '__main__':
 	Xtr, Ytr, Xte, Yte, dictionary = loadInputs('cifar-10-batches-py')
 	nn = classifierNN(dictionary)
 	nn.train(Xtr,Ytr)
-	nn.predict(Xte[0:10,:])
+	guess = nn.predict(Xte[0:10,:])
 
+	accuracy = np.mean(Yte[0:guess.shape[0]] == guess )
+	print('accuracy: ', accuracy)
