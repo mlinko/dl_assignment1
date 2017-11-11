@@ -2,7 +2,7 @@
 import numpy as np
 from datetime import datetime
 
-class classifierNN:
+class classifierNN_nontf:
 	# this class is a Nearest Neighbour classifier, that uses only numpy
 	# made only for fun
 	def __init__(self, dictionary):
