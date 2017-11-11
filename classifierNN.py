@@ -37,7 +37,8 @@ class classifierNN:
 
 		# On the http://cs231n.github.io/classification/ website
 		# the L1 distance is being used, which I am implementing here too
-		self.distance = tf.reduce_sum(tf.abs(tf.add(self.xtr, tf.negative(self.xte))))
+		self.distance = tf.reduce_sum(tf.abs(tf.add(self.xtr, tf.negative(self.xte))), reduction_indices=1)
+
 		# prediciton is based on the nearest object
 		self.predictor = tf.argmin(self.distance, axis=0)
 		# the next line initializes hte variables (assigns their )
@@ -59,7 +60,7 @@ class classifierNN:
 			# neighbour
 			# the prediction will be the class number of the nearest neighbour for the actal element
 			for i in range(len(Xte)):
-				neareastNeighbour = session.run(self.predictor, feed_dict={self.xtr: self.Xtr, self.xte:Xte[i,:]})
+				nearestNeighbour = session.run(self.predictor, feed_dict={self.xtr: self.Xtr, self.xte:Xte[i,:]})
 				prediction[i] = self.Ytr[nearestNeighbour]
 		return prediction
 				
