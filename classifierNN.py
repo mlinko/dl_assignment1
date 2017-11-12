@@ -60,6 +60,7 @@ class classifierNN:
 			# neighbour
 			# the prediction will be the class number of the nearest neighbour for the actal element
 			for i in range(len(Xte)):
+				if i%250 == 0: print('[%s]: training %5dth element'%(datetime.now().strftime('%Y.%m.%d %H:%M:%S'),i))
 				nearestNeighbour = session.run(self.predictor, feed_dict={self.xtr: self.Xtr, self.xte:Xte[i,:]})
 				prediction[i] = self.Ytr[nearestNeighbour]
 		return prediction
