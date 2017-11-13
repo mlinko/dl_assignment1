@@ -58,9 +58,8 @@ class classifierMLP:
 					batchStart = i * batchSize
 					batchEnd = batchStart + batchSize
 					if batchEnd > len(X): batchEnd = len(X)
-					if i%50 == 0: print('[%s]: epoch %3d, element %3d'%(datetime.now().strftime('%Y.%m.%d %H:%M:%S'), epoch, i))
-					print(Y[batchStart:batchEnd])
-					_,c = session.run(self.updates, feed_dict={self.x: X[batchStart:batchEnd,:],
+					if i%10 == 0: print('[%s]: epoch %3d, batch %3d'%(datetime.now().strftime('%Y.%m.%d %H:%M:%S'), epoch, i))
+					c = session.run(self.updates, feed_dict={self.x: X[batchStart:batchEnd,:],
 					self.y:
 					Y[batchStart:batchEnd]})
 
@@ -80,7 +79,7 @@ class classifierMLP:
 			session.run(init)
 			prediction = session.run(self.predictor, feed_dict={self.x: X, })
 			
-		print(np.argmax(prediction, axis=1))
+		return np.argmax(prediction, axis=1)
 		
 if __name__ == '__main__':
 	from cifar10reader import loadInputs
@@ -88,6 +87,6 @@ if __name__ == '__main__':
 	Xtr, Ytr, Xte, Yte, dictionary = loadInputs('cifar-10-batches-py')
 	mlp = classifierMLP()
 	mlp.train(Xtr[0:10000,:],Ytr[0:10000])
-	mlp.predict(Xte[0:100,:])
-	#accuracy = np.mean(Yte[0:guess.shape[0]] == guess )
-	#print('accuracy: ', accuracy)
+	guess = mlp.predict(Xte[0:100,:])
+	accuracy = np.mean(Yte[0:guess.shape[0]] == guess )
+	print('accuracy: ', accuracy)
