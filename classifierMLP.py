@@ -32,6 +32,8 @@ class classifierMLP:
 		self.model = self.forwardPropagation()
 		self.predictor = tf.nn.softmax(self.model, dim=1)
 
+		self.weightsSet = False
+
 	def forwardPropagation(self):
 		# this function defines the model of the neural network
 		layer1 = tf.nn.relu(tf.matmul(self.x, self.w1)) + self.b1
@@ -39,8 +41,9 @@ class classifierMLP:
 		layerOut = tf.nn.relu(tf.matmul(layer2, self.w3)) + self.b3
 		return layerOut
 
-	def train(self, Xin, Yin, epochs=1, batchSize=200):
+	def train(self, Xin, Yin, Xtein, Yte, epochs=1, batchSize=200):
 		X = Xin.reshape(Xin.shape[0], 3072)
+		Xte = Xtein.reshape(Xin.shape[0], 3072)
 		Y = np.zeros([len(Yin), 10])
 		for i in range(len(Y)):
 			Y[i, Yin[i]] = 1
@@ -49,7 +52,9 @@ class classifierMLP:
 		self.cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=self.y, logits=self.model) )
 		self.updates = tf.train.GradientDescentOptimizer(0.01).minimize(self.cost)
 		init = tf.global_variables_initializer()
+		saver = tf.train.Save()
 
+		self.weightsSet = True
 		with tf.Session() as session:
 			session.run(init)
 
@@ -62,17 +67,17 @@ class classifierMLP:
 					c = session.run(self.updates, feed_dict={self.x: X[batchStart:batchEnd,:],
 					self.y:
 					Y[batchStart:batchEnd]})
-
-			#for epoch in range(epochs):
-			#	for i in range(X.shape[0]):
-			#		if i%500 == 0: print('[%s]: epoch %3d, element %3d'%(datetime.now().strftime('%Y.%m.%d %H:%M:%S'), epoch, i))
-			#		print(X[i,:].shape)
-			#		print(X[i,:].transpose())
-			#		print(X[i,:].transpose().shape)
-			#		print(Y[i])
-			#		_,c = session.run(self.updates, feed_dict={self.x: np.mat(X[i]), self.y: np.mat(Y[i])})
+			
+			guess = self.predict(Xte)
+			print('[%s]: epoch %3d, accuracy %.2f%'%(datetime.now().strftime('%Y.%m.%d %H:%M:%S'), epoch, np.mean(Yte[0:guess.shape[0]] == guess) *100))
+			
+			savePath = saver.save(sess,'mlp/model.ckpt')
+			
 	
 	def predict(self, Xin):
+		
+
+
 		X = Xin.reshape(Xin.shape[0], 3072)
 		init = tf.global_variables_initializer()
 		with tf.Session() as session:
