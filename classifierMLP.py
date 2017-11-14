@@ -35,7 +35,18 @@ class classifierMLP:
 
         self.GAMMA = 0.0001
 
-        self.weightsSet = False
+
+    def shuffleData(self,x,y):
+        assert len(x) == len(y)
+        indexes = np.arange(len(x))
+        np.random.shuffle(indexes)
+        xout = x.copy()
+        yout = y.copy()
+        for i in indexes:
+            xout[i] = x[ indexes[i]]
+            yout[i] = y[ indexes[i]]
+        return xout, yout
+            
 
     def forwardPropagation(self):
         # this function defines the model of the neural network
@@ -50,8 +61,6 @@ class classifierMLP:
 
     def train(self, Xin, Yin, Xtein, Yte, epochs=1, batchSize=200):
         X = Xin.reshape(Xin.shape[0], 3072)
-        print('xin alak ', Xin.shape)
-        print('x alak ', X.shape)
         Xte = Xtein.reshape(Xtein.shape[0], 3072)
         Y = np.zeros([len(Yin), 10], dtype=np.float32)
         for i in range(len(Y)):
@@ -63,15 +72,9 @@ class classifierMLP:
         init = tf.global_variables_initializer()
         saver = tf.train.Saver()
 
-        self.weightsSet = True
         with tf.Session() as session:
 
-            print(X)
-            print(Y)
             session.run(init)
-            print(session.run(tf.train.shuffle_batch([X,Y], batch_size=len(X),capacity=60000, min_after_dequeue=50000)))
-
-            exit(0)
 
             for epoch in range(epochs):
                 for i in range(math.ceil(X.shape[0]/batchSize)):
@@ -84,24 +87,30 @@ class classifierMLP:
                         print('[%s]: epoch %3d, batch %3d, loss %f' % (datetime.now().strftime('%Y.%m.%d %H:%M:%S'), epoch, i, loss))
 
                     c = session.run(self.updates, feed_dict={self.x: X[batchStart:batchEnd,:], self.y: Y[batchStart:batchEnd]})
-                    #for layer in tf.trainable_variables():
-                    #    if 'w' in layer.name:
-                    #        print(layer.name)
-                    #        print(session.run(layer))
+                for layer in tf.trainable_variables():
+                    if 'w' in layer.name:
+                        print(layer.name)
+                        print(session.run(layer))
                 guess = np.argmax( session.run(self.predictor, feed_dict={self.x: Xte }), axis=1)
                 print(guess)
-                accuracy = np.mean(Yte[0:guess.shape[0]] == guess)
+                accuracy = np.mean(Yte == guess)
                 print('[%s]: epoch %3d, accuracy %2.1f %%'%(datetime.now().strftime('%Y.%m.%d %H:%M:%S'), epoch, accuracy *100))
                 savePath = saver.save(session,'mlp/1_epoch%d/model.ckpt'%epoch)
+                X, Y = self.shuffleData(X,Y)
     
-    def predict(self, Xin):
+    def predict(self, Xin, weightsFile):
 
         X = Xin.reshape(Xin.shape[0], 3072)
-        init = tf.global_variables_initializer()
+        #init = tf.global_variables_initializer()
+        saver = tf.train.Saver()
         with tf.Session() as session:
-            session.run(init)
-            prediction = session.run(self.predictor, feed_dict={self.x: X, })
-            
+            #session.run(init)
+            saver.restore(session, weightsFile)
+            prediction = session.run(self.predictor, feed_dict={self.x: X})
+            for layer in tf.trainable_variables():
+                if 'w' in layer.name:
+                    print(layer.name)
+                    print(session.run(layer))
         return np.argmax(prediction, axis=1)
         
 if __name__ == '__main__':
@@ -110,6 +119,7 @@ if __name__ == '__main__':
     Xtr, Ytr, Xte, Yte, dictionary = loadInputs('cifar-10-batches-py')
     mlp = classifierMLP()
     mlp.train(Xtr,Ytr, Xte, Yte, epochs=1)
-    #guess = mlp.predict(Xte[0:100,:])
-    #accuracy = np.mean(Yte[0:guess.shape[0]] == guess )
-    #print('accuracy: ', accuracy)
+    guess = mlp.predict(Xte, 'mlp/1_epoch0/model.ckpt')
+    print(guess)
+    accuracy = np.mean(Yte == guess )
+    print('accuracy: ', accuracy)
