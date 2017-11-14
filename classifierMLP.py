@@ -43,7 +43,7 @@ class classifierMLP:
 
 	def train(self, Xin, Yin, Xtein, Yte, epochs=1, batchSize=200):
 		X = Xin.reshape(Xin.shape[0], 3072)
-		Xte = Xtein.reshape(Xin.shape[0], 3072)
+		Xte = Xtein.reshape(Xtein.shape[0], 3072)
 		Y = np.zeros([len(Yin), 10])
 		for i in range(len(Y)):
 			Y[i, Yin[i]] = 1
@@ -52,7 +52,7 @@ class classifierMLP:
 		self.cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=self.y, logits=self.model) )
 		self.updates = tf.train.GradientDescentOptimizer(0.01).minimize(self.cost)
 		init = tf.global_variables_initializer()
-		saver = tf.train.Save()
+		saver = tf.train.Saver()
 
 		self.weightsSet = True
 		with tf.Session() as session:
@@ -64,19 +64,17 @@ class classifierMLP:
 					batchEnd = batchStart + batchSize
 					if batchEnd > len(X): batchEnd = len(X)
 					if i%10 == 0: print('[%s]: epoch %3d, batch %3d'%(datetime.now().strftime('%Y.%m.%d %H:%M:%S'), epoch, i))
-					c = session.run(self.updates, feed_dict={self.x: X[batchStart:batchEnd,:],
-					self.y:
-					Y[batchStart:batchEnd]})
-			
-			guess = self.predict(Xte)
-			print('[%s]: epoch %3d, accuracy %.2f%'%(datetime.now().strftime('%Y.%m.%d %H:%M:%S'), epoch, np.mean(Yte[0:guess.shape[0]] == guess) *100))
-			
-			savePath = saver.save(sess,'mlp/model.ckpt')
+					c = session.run(self.updates, feed_dict={self.x: X[batchStart:batchEnd,:], self.y: Y[batchStart:batchEnd]})
+				guess = np.argmax( session.run(self.predictor, feed_dict={self.x: Xte }), axis=1)
+				print(guess)
+				accuracy = np.mean(Yte[0:guess.shape[0]] == guess)
+				print('[%s]: epoch %3d, accuracy %2.1f %%'%(datetime.now().strftime('%Y.%m.%d %H:%M:%S'), epoch, accuracy *100))
+			savePath = saver.save(session,'mlp/model.ckpt')
 			
 	
 	def predict(self, Xin):
 		
-
+		
 
 		X = Xin.reshape(Xin.shape[0], 3072)
 		init = tf.global_variables_initializer()
@@ -91,7 +89,7 @@ if __name__ == '__main__':
 
 	Xtr, Ytr, Xte, Yte, dictionary = loadInputs('cifar-10-batches-py')
 	mlp = classifierMLP()
-	mlp.train(Xtr[0:10000,:],Ytr[0:10000])
-	guess = mlp.predict(Xte[0:100,:])
-	accuracy = np.mean(Yte[0:guess.shape[0]] == guess )
-	print('accuracy: ', accuracy)
+	mlp.train(Xtr,Ytr, Xte, Yte, epochs=10)
+	#guess = mlp.predict(Xte[0:100,:])
+	#accuracy = np.mean(Yte[0:guess.shape[0]] == guess )
+	#print('accuracy: ', accuracy)
