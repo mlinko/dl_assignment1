@@ -95,7 +95,7 @@ class classifierMLP:
                 guess = np.argmax( session.run(self.predictor, feed_dict={self.x: Xte }), axis=1)
                 accuracy = np.mean(Yte == guess)
                 print('[%s]: epoch %3d, accuracy %2.1f %%'%(datetime.now().strftime('%Y.%m.%d %H:%M:%S'), epoch, accuracy *100))
-                savePath = saver.save(session,'mlp/2_epoch%d/model.ckpt'%epoch)
+                savePath = saver.save(session,'mlp/3_epoch%d/model.ckpt'%epoch)
                 X, Y = self.shuffleData(X,Y)
     
     def predict(self, Xin, weightsFile):
@@ -118,8 +118,8 @@ if __name__ == '__main__':
 
     Xtr, Ytr, Xte, Yte, dictionary = loadInputs('cifar-10-batches-py')
     mlp = classifierMLP()
-    mlp.train(Xtr,Ytr, Xte, Yte, epochs=500)
-    #guess = mlp.predict(Xte, 'mlp/1_epoch0/model.ckpt')
-    #print(guess)
-    #accuracy = np.mean(Yte == guess )
-    #print('accuracy: ', accuracy)
+    #mlp.train(Xtr,Ytr, Xte, Yte, epochs=500)
+    guess = mlp.predict(Xte, 'mlp/2_epoch465/model.ckpt')
+    print(guess)
+    accuracy = np.mean(Yte == guess )
+    print('accuracy: ', accuracy)
