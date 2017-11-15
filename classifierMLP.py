@@ -33,7 +33,8 @@ class classifierMLP:
         self.model = self.forwardPropagation()
         self.predictor = tf.nn.softmax(self.model, dim=1)
 
-        self.GAMMA = 0.0001
+        self.GAMMA = 0.0005
+        self.learningRate = 0.0005
 
 
     def shuffleData(self,x,y):
@@ -59,7 +60,7 @@ class classifierMLP:
         layerOut = tf.matmul(layer3, self.w4) + self.b4 
         return layerOut
 
-    def train(self, Xin, Yin, Xtein, Yte, epochs=1, batchSize=200):
+    def train(self, Xin, Yin, Xtein, Yte, epochs=1, batchSize=100):
         X = Xin.reshape(Xin.shape[0], 3072)
         Xte = Xtein.reshape(Xtein.shape[0], 3072)
         Y = np.zeros([len(Yin), 10], dtype=np.float32)
@@ -68,7 +69,7 @@ class classifierMLP:
 
         self.cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=self.y, logits=self.model) )
         self.l2_cost = self.GAMMA * sum(tf.nn.l2_loss(layer) for layer in tf.trainable_variables() )
-        self.updates = tf.train.AdamOptimizer(learning_rate=0.0001).minimize(self.cost + self.l2_cost)
+        self.updates = tf.train.AdamOptimizer(learning_rate=self.learningRate).minimize(self.cost + self.l2_cost)
         init = tf.global_variables_initializer()
         saver = tf.train.Saver()
 
@@ -87,15 +88,14 @@ class classifierMLP:
                         print('[%s]: epoch %3d, batch %3d, loss %f' % (datetime.now().strftime('%Y.%m.%d %H:%M:%S'), epoch, i, loss))
 
                     c = session.run(self.updates, feed_dict={self.x: X[batchStart:batchEnd,:], self.y: Y[batchStart:batchEnd]})
-                for layer in tf.trainable_variables():
-                    if 'w' in layer.name:
-                        print(layer.name)
-                        print(session.run(layer))
+                #for layer in tf.trainable_variables():
+                #    if 'w' in layer.name:
+                #        print(layer.name)
+                #        print(session.run(layer))
                 guess = np.argmax( session.run(self.predictor, feed_dict={self.x: Xte }), axis=1)
-                print(guess)
                 accuracy = np.mean(Yte == guess)
                 print('[%s]: epoch %3d, accuracy %2.1f %%'%(datetime.now().strftime('%Y.%m.%d %H:%M:%S'), epoch, accuracy *100))
-                savePath = saver.save(session,'mlp/1_epoch%d/model.ckpt'%epoch)
+                savePath = saver.save(session,'mlp/2_epoch%d/model.ckpt'%epoch)
                 X, Y = self.shuffleData(X,Y)
     
     def predict(self, Xin, weightsFile):
@@ -107,10 +107,10 @@ class classifierMLP:
             #session.run(init)
             saver.restore(session, weightsFile)
             prediction = session.run(self.predictor, feed_dict={self.x: X})
-            for layer in tf.trainable_variables():
-                if 'w' in layer.name:
-                    print(layer.name)
-                    print(session.run(layer))
+            #for layer in tf.trainable_variables():
+            #    if 'w' in layer.name:
+            #        print(layer.name)
+            #        print(session.run(layer))
         return np.argmax(prediction, axis=1)
         
 if __name__ == '__main__':
@@ -118,8 +118,8 @@ if __name__ == '__main__':
 
     Xtr, Ytr, Xte, Yte, dictionary = loadInputs('cifar-10-batches-py')
     mlp = classifierMLP()
-    mlp.train(Xtr,Ytr, Xte, Yte, epochs=1)
-    guess = mlp.predict(Xte, 'mlp/1_epoch0/model.ckpt')
-    print(guess)
-    accuracy = np.mean(Yte == guess )
-    print('accuracy: ', accuracy)
+    mlp.train(Xtr,Ytr, Xte, Yte, epochs=500)
+    #guess = mlp.predict(Xte, 'mlp/1_epoch0/model.ckpt')
+    #print(guess)
+    #accuracy = np.mean(Yte == guess )
+    #print('accuracy: ', accuracy)
